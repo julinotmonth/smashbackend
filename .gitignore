@@ -1,0 +1,8 @@
+node_modules
+.env
+.env.local
+uploads/payments/*
+!uploads/payments/.gitkeep
+*.log
+npm-debug.log*
+.DS_Store
