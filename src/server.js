@@ -8,18 +8,29 @@ const app = express()
 const PORT = process.env.PORT || 3000
 
 // ─── Middleware ────────────────────────────────────────────────────────────────
+const normalizeOrigin = (url) => url.trim().replace(/\/+$/, '') // strip trailing slash(es)
+
 const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:5173')
   .split(',')
-  .map(o => o.trim())
+  .map(normalizeOrigin)
+  .filter(Boolean)
+
+console.log('🔐 CORS allowed origins:', allowedOrigins)
 
 app.use(cors({
   origin: (origin, callback) => {
-    // allow requests with no origin (curl, mobile apps, server-to-server)
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true)
-    } else {
-      callback(new Error('Not allowed by CORS'))
+    // No origin header (curl, server-to-server, Postman) → allow
+    if (!origin) return callback(null, true)
+
+    const normalized = normalizeOrigin(origin)
+    const isAllowed = allowedOrigins.includes(normalized)
+
+    if (!isAllowed) {
+      console.warn(`⚠️  CORS blocked request from origin: ${origin}`)
     }
+
+    // Never throw — just toggle whether this origin is reflected back
+    callback(null, isAllowed)
   },
   credentials: true,
 }))
