@@ -1,9 +1,16 @@
 const pool = require('../config/db')
 
+// Get current date in WIB (UTC+7), regardless of server's own timezone (Railway runs in UTC)
+const getTodayInWIB = () => {
+  const now = new Date()
+  const wib = new Date(now.getTime() + 7 * 60 * 60 * 1000)
+  return wib.toISOString().split('T')[0]
+}
+
 // GET /api/dashboard/stats (admin)
 const getStats = async (req, res) => {
   try {
-    const today = new Date().toISOString().split('T')[0]
+    const today = getTodayInWIB()
 
     const [todayBookings, pendingCount, totalUsers, totalBookings, bookingsByDay, bookingsByCourt, revenue] = await Promise.all([
       pool.query(
@@ -47,12 +54,13 @@ const getStats = async (req, res) => {
     const dayNames = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']
     const last7 = []
     for (let i = 6; i >= 0; i--) {
-      const d = new Date()
-      d.setDate(d.getDate() - i)
-      const dateStr = d.toISOString().split('T')[0]
+      const now = new Date()
+      const wib = new Date(now.getTime() + 7 * 60 * 60 * 1000)
+      wib.setUTCDate(wib.getUTCDate() - i)
+      const dateStr = wib.toISOString().split('T')[0]
       const found = bookingsByDay.rows.find(r => r.date.toISOString().split('T')[0] === dateStr)
       last7.push({
-        name: dayNames[d.getDay()],
+        name: dayNames[wib.getUTCDay()],
         total: found ? parseInt(found.total) : 0
       })
     }

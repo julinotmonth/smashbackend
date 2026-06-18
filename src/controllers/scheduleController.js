@@ -6,6 +6,17 @@ const TIME_SLOTS = [
   '18:00', '19:00', '20:00', '21:00', '22:00',
 ]
 
+// Get current date & hour in WIB (UTC+7), regardless of server's own timezone (Railway runs in UTC)
+const getNowInWIB = () => {
+  const now = new Date()
+  // Convert to WIB by adding 7 hours offset to UTC time
+  const wib = new Date(now.getTime() + 7 * 60 * 60 * 1000)
+  return {
+    date: wib.toISOString().split('T')[0],
+    hour: wib.getUTCHours(), // use getUTCHours since we already shifted the time manually
+  }
+}
+
 // GET /api/schedule?date=YYYY-MM-DD
 const getAvailability = async (req, res) => {
   try {
@@ -26,8 +37,7 @@ const getAvailability = async (req, res) => {
     `, [date])
     const bookings = bookingsResult.rows
 
-    const todayDate = new Date().toISOString().split('T')[0]
-    const currentHour = new Date().getHours()
+    const { date: todayDate, hour: currentHour } = getNowInWIB()
 
     // Build schedule
     const schedule = {}
